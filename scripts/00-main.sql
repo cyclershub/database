@@ -1,30 +1,39 @@
 BEGIN;
 
-CREATE TABLE "Forums"(
+CREATE TABLE forums(
   id serial NOT NULL,
   title varchar(50) NOT NULL,
   description text,
-  "MessageCount" integer NOT NULL DEFAULT 0,
-  "ThreadCount" integer NOT NULL DEFAULT 0,
-  "CreatedOn" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "Forums_pkey" PRIMARY KEY(id)
+  message_count integer NOT NULL DEFAULT 0,
+  thread_count integer NOT NULL DEFAULT 0,
+  created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  uid uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT forums_pkey PRIMARY KEY(id)
 );
 
-CREATE TABLE "Messages"(
+CREATE TABLE message_votes(
+  users_id integer NOT NULL,
+  messages_id integer NOT NULL,
+  "type" integer NOT NULL,
+  CONSTRAINT message_votes_pkey PRIMARY KEY(users_id, messages_id, "type")
+);
+
+CREATE TABLE messages(
   id serial NOT NULL,
+  uid uuid NOT NULL DEFAULT gen_random_uuid(),
   body text,
-  "Votes" integer NOT NULL DEFAULT 0,
-  "CreatedOn" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  votes integer NOT NULL DEFAULT 0,
+  created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   threads_id integer NOT NULL,
   users_id integer NOT NULL,
-  CONSTRAINT "Messages_pkey" PRIMARY KEY(id)
+  CONSTRAINT messages_pkey PRIMARY KEY(id)
 );
 
-CREATE TABLE "Places"(
+CREATE TABLE places(
   id serial NOT NULL,
   title varchar(255) NOT NULL,
   description text,
-  "CreatedOn" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   images json,
   rating float8 NOT NULL DEFAULT 0,
   services integer NOT NULL DEFAULT 0,
@@ -36,47 +45,94 @@ CREATE TABLE "Places"(
   lng float8 NOT NULL,
   users_id integer,
   "type" varchar NOT NULL,
-  CONSTRAINT "Places_pkey" PRIMARY KEY(id)
+  uid uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT places_pkey PRIMARY KEY(id)
 );
 
-CREATE TABLE "Threads"(
+CREATE TABLE thread_views(
+threads_id integer NOT NULL, users_id integer NOT NULL,
+  CONSTRAINT thread_views_pkey PRIMARY KEY(threads_id, users_id)
+);
+
+CREATE TABLE threads(
   id serial NOT NULL,
-  "MessageCount" integer NOT NULL DEFAULT 0,
-  "ViewCount" integer NOT NULL DEFAULT 0,
-  "Votes" integer NOT NULL DEFAULT 0,
+  message_count integer NOT NULL DEFAULT 0,
+  view_count integer NOT NULL DEFAULT 0,
+  votes integer NOT NULL DEFAULT 0,
   forums_id integer NOT NULL,
   users_id integer NOT NULL,
   title varchar NOT NULL,
-  CONSTRAINT "Threads_pkey" PRIMARY KEY(id)
+  uid uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT threads_pkey PRIMARY KEY(id)
 );
 
-CREATE TABLE "Users"(
+CREATE TABLE users(
   id serial NOT NULL,
   username varchar(50) NOT NULL,
   email varchar(255) NOT NULL,
   "password" varchar(128) NOT NULL,
-  uid varchar(36) NOT NULL,
-  CONSTRAINT "Users_pkey" PRIMARY KEY(id)
+  uid uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_picture varchar(255),
+  CONSTRAINT users_pkey PRIMARY KEY(id)
 );
 
-ALTER TABLE "Threads"
-  ADD CONSTRAINT "Threads_forums_id_fkey"
-    FOREIGN KEY (forums_id) REFERENCES "Forums" (id);
+CREATE TABLE tags(
+  id serial NOT NULL,
+  tag varchar(50) NOT NULL,
+  created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT tags_pkey PRIMARY KEY(id)
+);
 
-ALTER TABLE "Threads"
-  ADD CONSTRAINT "Threads_users_id_fkey"
-    FOREIGN KEY (users_id) REFERENCES "Users" (id);
+  CREATE UNIQUE INDEX tags_tag_unique ON tags(tag);
+  
+CREATE TABLE threads_tags(
+tags_id integer NOT NULL, threads_id integer NOT NULL,
+  CONSTRAINT threads_tags_pkey PRIMARY KEY(tags_id, threads_id)
+);
 
-ALTER TABLE "Messages"
-  ADD CONSTRAINT "Messages_threads_id_fkey"
-    FOREIGN KEY (threads_id) REFERENCES "Threads" (id);
+ALTER TABLE threads
+  ADD CONSTRAINT threads_forums_id_fkey
+    FOREIGN KEY (forums_id) REFERENCES forums (id);
 
-ALTER TABLE "Messages"
-  ADD CONSTRAINT "Messages_users_id_fkey"
-    FOREIGN KEY (users_id) REFERENCES "Users" (id);
+ALTER TABLE threads
+  ADD CONSTRAINT threads_users_id_fkey
+    FOREIGN KEY (users_id) REFERENCES users (id);
 
-ALTER TABLE "Places"
-  ADD CONSTRAINT "Places_users_id_fkey"
-    FOREIGN KEY (users_id) REFERENCES "Users" (id);
+ALTER TABLE messages
+  ADD CONSTRAINT messages_threads_id_fkey
+    FOREIGN KEY (threads_id) REFERENCES threads (id);
+
+ALTER TABLE messages
+  ADD CONSTRAINT messages_users_id_fkey
+    FOREIGN KEY (users_id) REFERENCES users (id);
+
+ALTER TABLE places
+  ADD CONSTRAINT places_users_id_fkey FOREIGN KEY (users_id) REFERENCES users (id)
+  ;
+
+ALTER TABLE thread_views
+  ADD CONSTRAINT thread_views_threads_id_fkey
+    FOREIGN KEY (threads_id) REFERENCES threads (id);
+
+ALTER TABLE thread_views
+  ADD CONSTRAINT thread_views_users_id_fkey
+    FOREIGN KEY (users_id) REFERENCES users (id);
+
+ALTER TABLE message_votes
+  ADD CONSTRAINT message_votes_users_id_fkey
+    FOREIGN KEY (users_id) REFERENCES users (id);
+
+ALTER TABLE message_votes
+  ADD CONSTRAINT message_votes_messages_id_fkey
+    FOREIGN KEY (messages_id) REFERENCES messages (id);
+
+ALTER TABLE threads_tags
+  ADD CONSTRAINT threads_tags_tags_id_fkey
+    FOREIGN KEY (tags_id) REFERENCES tags (id);
+
+ALTER TABLE threads_tags
+  ADD CONSTRAINT threads_tags_threads_id_fkey
+    FOREIGN KEY (threads_id) REFERENCES threads (id);
 
 END;
