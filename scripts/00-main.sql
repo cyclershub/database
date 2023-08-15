@@ -61,15 +61,21 @@ CREATE TABLE places(
 	CONSTRAINT places_pkey PRIMARY KEY(id)
 );
 
-CREATE TABLE setups_images (
-	setups_id integer NOT NULL,
-	images_id integer NOT NULL
+CREATE TABLE routes(
+	id serial NOT NULL,
+	uid uuid NOT NULL DEFAULT gen_random_uuid(),
+	"data" bytea NOT NULL,
+	users_id integer NOT NULL,
+	created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"name" varchar(150),
+	body text,
+	CONSTRAINT routes_pkey PRIMARY KEY(id)
 );
 
 CREATE TABLE setups(
 	id serial NOT NULL,
 	title varchar(255) NOT NULL,
-	body text NOT NULL,
+	"content" text NOT NULL,
 	created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	users_id integer NOT NULL,
 	uid uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -77,6 +83,11 @@ CREATE TABLE setups(
 );
 
 COMMENT ON TABLE setups IS 'Bicycle Setups visible in the Gallery section.';
+
+CREATE TABLE setups_images (
+	setups_id integer NOT NULL,
+	images_id integer NOT NULL
+);
 
 CREATE TABLE tags(
 	id serial NOT NULL,
@@ -198,5 +209,10 @@ ALTER TABLE
 	images
 ADD
 	CONSTRAINT images_users_id_fkey FOREIGN KEY (users_id) REFERENCES users (id);
+
+ALTER TABLE
+	routes
+ADD
+	CONSTRAINT routes_users_id_fkey FOREIGN KEY (users_id) REFERENCES users (id);
 
 END;
