@@ -79,15 +79,11 @@ CREATE TABLE setups(
 	created_on timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	users_id integer NOT NULL,
 	uid uuid NOT NULL DEFAULT gen_random_uuid(),
+	cover varchar(255) NOT NULL,
 	CONSTRAINT setups_pkey PRIMARY KEY(id)
 );
 
 COMMENT ON TABLE setups IS 'Bicycle Setups visible in the Gallery section.';
-
-CREATE TABLE setups_images (
-	setups_id integer NOT NULL,
-	images_id integer NOT NULL
-);
 
 CREATE TABLE tags(
 	id serial NOT NULL,
@@ -189,16 +185,6 @@ ALTER TABLE
 	threads_tags
 ADD
 	CONSTRAINT threads_tags_threads_id_fkey FOREIGN KEY (threads_id) REFERENCES threads (id);
-
-ALTER TABLE
-	setups_images
-ADD
-	CONSTRAINT setups_images_setups_id_fkey FOREIGN KEY (setups_id) REFERENCES setups (id);
-
-ALTER TABLE
-	setups_images
-ADD
-	CONSTRAINT setups_images_images_id_fkey FOREIGN KEY (images_id) REFERENCES images (id);
 
 ALTER TABLE
 	setups
