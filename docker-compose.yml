@@ -1,7 +1,9 @@
 version: '3'
 services:
-  db:
+  database:
+    container_name: database
     build: ./
-    container_name: cyclershub-db
+    env_file:
+      - .env
     ports:
-      - "5430:5432"
+      - "5436:5432"

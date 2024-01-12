@@ -1,0 +1,46 @@
+name: Release Package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun test
+  
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      # Publish to NPM
+      - uses: JS-DevTools/npm-publish@v3
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          registry: "https://npm.pkg.github.com"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: appleboy/ssh-action@master
+        with:
+          host: ""
+          username: ""
+          password: ""
+          port: 22
+          script: |
+            cd ~/database
+            git reset --hard HEAD
+            git clean -f -d
+            git pull origin main
+            git status
+            bash build.sh

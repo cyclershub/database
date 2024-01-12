@@ -1,0 +1,164 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+generator faker {
+  provider = "prisma-generator-fake-data"
+  output   = "../src/types/fake-data.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_DATABASE_URL")
+}
+
+model forums {
+  id            Int       @id @default(autoincrement())
+  title         String    @db.VarChar(50)
+  description   String?
+  message_count Int       @default(0)
+  thread_count  Int       @default(0)
+  created_on    DateTime  @default(now()) @db.Timestamp(6)
+  uid           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  threads       Threads[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model images {
+  id         Int      @id @default(autoincrement())
+  uid        String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alt        String?  @db.VarChar(255)
+  category   String   @db.VarChar(50)
+  users_id   Int
+  created_on DateTime @default(now()) @db.Timestamp(6)
+  users      users    @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model message_votes {
+  users_id    Int
+  messages_id Int
+  type        Int
+  messages    messages @relation(fields: [messages_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       users    @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, messages_id, type])
+}
+
+model messages {
+  id            Int             @id @default(autoincrement())
+  uid           String          @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  body          String?
+  votes         Int             @default(0)
+  created_on    DateTime        @default(now()) @db.Timestamp(6)
+  threads_id    Int
+  users_id      Int
+  message_votes message_votes[]
+  threads       Threads         @relation(fields: [threads_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users           @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model places {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String?
+  created_on  DateTime @default(now()) @db.Timestamp(6)
+  images      Json?    @db.Json
+  rating      Float    @default(0)
+  services    Int      @default(0)
+  street      String?  @db.VarChar
+  zip         String?  @db.VarChar
+  city        String?  @db.VarChar
+  country     String?  @db.VarChar
+  lat         Float
+  lng         Float
+  users_id    Int?
+  type        String   @db.VarChar
+  uid         String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  users       users?   @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model routes {
+  id         Int      @id @default(autoincrement())
+  uid        String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  data       Bytes
+  users_id   Int
+  created_on DateTime @default(now()) @db.Timestamp(6)
+  name       String?  @db.VarChar(150)
+  body       String?
+  users      users    @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model setups {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  content    String
+  created_on DateTime @default(now()) @db.Timestamp(6)
+  users_id   Int
+  uid        String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cover      String   @db.VarChar(255)
+  users      users    @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tags {
+  id           Int            @id @default(autoincrement())
+  tag          String         @unique(map: "tags_tag_unique") @db.VarChar(50)
+  created_on   DateTime       @default(now()) @db.Timestamp(6)
+  threads_tags threads_tags[]
+}
+
+model thread_views {
+  threads_id Int
+  users_id   Int
+  threads    Threads @relation(fields: [threads_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users   @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([threads_id, users_id])
+}
+
+model Threads {
+  id            Int            @id @default(autoincrement())
+  message_count Int            @default(0)
+  view_count    Int            @default(0)
+  votes         Int            @default(0)
+  forums_id     Int
+  users_id      Int
+  title         String         @db.VarChar
+  uid           String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid @unique
+  created_on    DateTime       @default(now()) @db.Timestamp(6)
+  messages      messages[]
+  thread_views  thread_views[]
+  forums        forums         @relation(fields: [forums_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users          @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  threads_tags  threads_tags[]
+	@@map("threads")
+}
+
+model threads_tags {
+  tags_id    Int
+  threads_id Int
+  tags       tags    @relation(fields: [tags_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  threads    Threads @relation(fields: [threads_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([tags_id, threads_id])
+}
+
+model users {
+  id              Int             @id @default(autoincrement())
+  username        String          @db.VarChar(50)
+  email           String          @db.VarChar(255)
+  password        String          @db.VarChar(128)
+  uid             String          @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profile_picture String?         @db.VarChar(255)
+  country         String?         @db.VarChar(2)
+  city            String?         @db.VarChar(55)
+  images          images[]
+  message_votes   message_votes[]
+  messages        messages[]
+  places          places[]
+  routes          routes[]
+  setups          setups[]
+  thread_views    thread_views[]
+  threads         Threads[]
+}

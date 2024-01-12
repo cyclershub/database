@@ -1,8 +1,14 @@
 FROM postgres:latest
-ENV POSTGRES_USER main
-ENV POSTGRES_PASSWORD "kCKF3ZdUIbCPZF7fwREUJLEevSyyZGWbS68vJSZx5ze4W9PyM9ZXHevtGgScnmRu"
-ENV POSTGRES_DB main
+ENV POSTGRES_USER ${POSTGRES_USER}
+ENV POSTGRES_PASSWORD ${POSTGRES_PASSWORD}
+ENV POSTGRES_DB ${POSTGRES_DB}
 
-EXPOSE 5432
+COPY ./prisma/migrations/ /docker-entrypoint-initdb.d/
 
-COPY scripts /docker-entrypoint-initdb.d/
+# Use a loop to copy migration.sql from each folder to the corresponding directory in the build context
+RUN for folder in /docker-entrypoint-initdb.d/*; do \
+	if [ -d "$folder" ]; then \
+    cp "$folder/migration.sql" "$folder.sql"; \
+		rm -rf "$folder"; \
+	fi \
+done
